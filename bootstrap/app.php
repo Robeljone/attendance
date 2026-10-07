@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsurePasswordChanged::class,
         ]);
 
+        $middleware->redirectGuestsTo(function (Request $request) {
+            return $request->is('admin', 'admin/*')
+                ? route('admin.login')
+                : route('login');
+        });
+
         $middleware->alias([
             'role' => EnsureRole::class,
             'company.network' => EnsureCompanyNetwork::class,

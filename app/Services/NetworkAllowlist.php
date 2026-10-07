@@ -7,26 +7,62 @@ use Illuminate\Support\Facades\Log;
 
 class NetworkAllowlist
 {
-    public function allows(string $ip): bool
+    /**
+     * @return array{enforced: bool, on_allowlist: bool, permitted: bool, cidrs: list<string>}
+     */
+    public function evaluate(string $ip): array
     {
         $settings = CompanySetting::current();
+        $cidrs = array_values(array_map(
+            'strval',
+            $settings->allowed_ip_cidrs ?: config('attendance.allowed_ip_cidrs', []),
+        ));
+        $enforced = (bool) $settings->enforce_company_network;
+        $onAllowlist = $this->matchesAllowlist($ip, $cidrs);
 
-        if (! $settings->enforce_company_network) {
+        return [
+            'enforced' => $enforced,
+            'on_allowlist' => $onAllowlist,
+            'permitted' => ! $enforced || $onAllowlist,
+            'cidrs' => $cidrs,
+        ];
+    }
+
+    public function allows(string $ip): bool
+    {
+        $evaluation = $this->evaluate($ip);
+
+        if ($evaluation['permitted']) {
             return true;
         }
 
-        $cidrs = $settings->allowed_ip_cidrs ?: config('attendance.allowed_ip_cidrs', []);
+        Log::info('Attendance blocked: client IP not on company network', [
+            'ip' => $ip,
+            'allowed' => $evaluation['cidrs'],
+        ]);
+
+        return false;
+    }
+
+    /**
+     * @param  list<string>|null  $cidrs
+     */
+    public function matchesAllowlist(string $ip, ?array $cidrs = null): bool
+    {
+        $cidrs ??= array_values(array_map(
+            'strval',
+            CompanySetting::current()->allowed_ip_cidrs ?: config('attendance.allowed_ip_cidrs', []),
+        ));
+
+        if ($cidrs === []) {
+            return false;
+        }
 
         foreach ($cidrs as $cidr) {
             if ($this->ipInCidr($ip, (string) $cidr)) {
                 return true;
             }
         }
-
-        Log::info('Attendance blocked: client IP not on company network', [
-            'ip' => $ip,
-            'allowed' => $cidrs,
-        ]);
 
         return false;
     }

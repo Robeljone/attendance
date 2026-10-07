@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\StoreEmployeeRequest;
 use App\Http\Requests\Admin\UpdateEmployeeRequest;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\PayComponent;
 use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Support\ResolvesIndexPagination;
@@ -72,6 +73,8 @@ class EmployeeController extends Controller
                 'user_id' => $user->id,
                 'status' => $validated['status'] ?? EmploymentStatus::Active,
                 'base_salary' => $validated['base_salary'] ?? 0,
+                'housing_allowance' => $validated['housing_allowance'] ?? 0,
+                'transport_allowance' => $validated['transport_allowance'] ?? 0,
             ]));
 
             if ($request->hasFile('photo')) {
@@ -86,7 +89,9 @@ class EmployeeController extends Controller
                 ]);
             }
 
-            return $employee;
+            $this->syncPayComponents($employee, $validated);
+
+            return $employee->fresh();
         });
 
         return redirect()
@@ -98,7 +103,7 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee): View
     {
-        $employee->load(['user', 'department', 'workSchedules', 'educations', 'documents']);
+        $employee->load(['user', 'department', 'workSchedules', 'educations', 'documents', 'payComponents']);
 
         $attendance = $employee->attendanceRecords()
             ->latest('work_date')
@@ -115,7 +120,7 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee): View
     {
-        $employee->load(['user', 'department', 'workSchedules']);
+        $employee->load(['user', 'department', 'workSchedules', 'payComponents']);
 
         return view('admin.employees.edit', [
             'employee' => $employee,
@@ -145,6 +150,8 @@ class EmployeeController extends Controller
             $attributes = $this->employeeAttributes($validated, [
                 'status' => $validated['status'],
                 'base_salary' => $validated['base_salary'] ?? 0,
+                'housing_allowance' => $validated['housing_allowance'] ?? 0,
+                'transport_allowance' => $validated['transport_allowance'] ?? 0,
             ]);
 
             if ($request->boolean('remove_photo') && $employee->photo_path) {
@@ -164,6 +171,8 @@ class EmployeeController extends Controller
                     $validated['work_schedule_id'] => ['effective_from' => now()->toDateString()],
                 ]);
             }
+
+            $this->syncPayComponents($employee, $validated);
         });
 
         return redirect()->route('admin.employees.show', $employee)->with('success', 'Employee updated successfully.');
@@ -186,6 +195,7 @@ class EmployeeController extends Controller
      * @return array{
      *     departments: Collection<int, Department>,
      *     schedules: Collection<int, WorkSchedule>,
+     *     payComponents: Collection<int, PayComponent>,
      *     statuses: list<EmploymentStatus>,
      *     genders: list<Gender>,
      *     maritalStatuses: list<MaritalStatus>
@@ -196,10 +206,43 @@ class EmployeeController extends Controller
         return [
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(),
             'schedules' => WorkSchedule::query()->where('is_active', true)->orderBy('name')->get(),
+            'payComponents' => PayComponent::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
             'statuses' => EmploymentStatus::cases(),
             'genders' => Gender::cases(),
             'maritalStatuses' => MaritalStatus::cases(),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncPayComponents(Employee $employee, array $validated): void
+    {
+        $inputs = $validated['pay_components'] ?? [];
+        $sync = [];
+
+        foreach ($inputs as $componentId => $data) {
+            $amount = (float) ($data['amount'] ?? 0);
+            $enabled = (bool) ($data['enabled'] ?? false) || $amount > 0;
+
+            if (! $enabled || $amount < 0) {
+                continue;
+            }
+
+            $sync[(int) $componentId] = [
+                'amount' => $amount,
+                'is_enabled' => true,
+            ];
+        }
+
+        $employee->payComponents()->sync($sync);
+
+        $assigned = $employee->payComponents()->get()->keyBy('code');
+
+        $employee->update([
+            'housing_allowance' => (float) ($assigned->get('housing_allowance')?->pivot->amount ?? 0),
+            'transport_allowance' => (float) ($assigned->get('transport_allowance')?->pivot->amount ?? 0),
+        ]);
     }
 
     /**
@@ -215,6 +258,7 @@ class EmployeeController extends Controller
             'phone' => $validated['phone'] ?? null,
             'position' => $validated['position'] ?? null,
             'hire_date' => $validated['hire_date'] ?? null,
+            'termination_date' => $validated['termination_date'] ?? null,
             'date_of_birth' => $validated['date_of_birth'] ?? null,
             'address' => $validated['address'] ?? null,
             'bank_account' => $validated['bank_account'] ?? null,

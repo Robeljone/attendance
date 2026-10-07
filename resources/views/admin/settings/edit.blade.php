@@ -39,6 +39,21 @@
                     </div>
                 </div>
 
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <x-input-label for="income_tax_percent" :value="__('Income tax %')" />
+                        <x-text-input id="income_tax_percent" name="income_tax_percent" type="number" step="0.01" min="0" max="100" class="mt-1 block w-full" :value="old('income_tax_percent', $settings->income_tax_percent ?? 0)" />
+                        <p class="mt-1 text-sm text-gray-500">{{ __('Applied to taxable earnings on each payslip.') }}</p>
+                        <x-input-error class="mt-2" :messages="$errors->get('income_tax_percent')" />
+                    </div>
+                    <div>
+                        <x-input-label for="pension_percent" :value="__('Pension %')" />
+                        <x-text-input id="pension_percent" name="pension_percent" type="number" step="0.01" min="0" max="100" class="mt-1 block w-full" :value="old('pension_percent', $settings->pension_percent ?? 0)" />
+                        <p class="mt-1 text-sm text-gray-500">{{ __('Employee pension contribution percent.') }}</p>
+                        <x-input-error class="mt-2" :messages="$errors->get('pension_percent')" />
+                    </div>
+                </div>
+
                 <div class="flex items-center">
                     <input id="enforce_company_network" name="enforce_company_network" type="checkbox" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('enforce_company_network', $settings->enforce_company_network)) />
                     <x-input-label for="enforce_company_network" :value="__('Enforce company network for clock-in')" class="ms-2" />

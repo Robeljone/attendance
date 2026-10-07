@@ -6,10 +6,11 @@ use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    public function test_the_application_redirects_guests_to_login(): void
+    public function test_the_application_shows_portal_chooser_for_guests(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('login'));
+        $response->assertOk();
+        $response->assertSee(__('Choose your portal'));
     }
 }

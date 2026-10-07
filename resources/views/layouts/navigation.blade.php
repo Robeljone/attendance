@@ -133,7 +133,7 @@
                     <x-sidebar.nav-group
                         :title="__('Pay & reports')"
                         icon="banknotes"
-                        :active="request()->routeIs('admin.payroll.*', 'admin.reports.*')"
+                        :active="request()->routeIs('admin.payroll.*', 'admin.pay-components.*', 'admin.reports.*')"
                     >
                         <x-sidebar.nav-link
                             :href="route('admin.payroll.index')"
@@ -145,13 +145,31 @@
                             {{ __('Payroll') }}
                         </x-sidebar.nav-link>
                         <x-sidebar.nav-link
+                            :href="route('admin.pay-components.index')"
+                            :active="request()->routeIs('admin.pay-components.*')"
+                            icon="banknotes"
+                            :nested="true"
+                            x-on:click="closeSidebarOnMobile()"
+                        >
+                            {{ __('Pay components') }}
+                        </x-sidebar.nav-link>
+                        <x-sidebar.nav-link
                             :href="route('admin.reports.index')"
-                            :active="request()->routeIs('admin.reports.*')"
+                            :active="request()->routeIs('admin.reports.index')"
                             icon="chart"
                             :nested="true"
                             x-on:click="closeSidebarOnMobile()"
                         >
                             {{ __('Reports') }}
+                        </x-sidebar.nav-link>
+                        <x-sidebar.nav-link
+                            :href="route('admin.reports.audit')"
+                            :active="request()->routeIs('admin.reports.audit')"
+                            icon="chart"
+                            :nested="true"
+                            x-on:click="closeSidebarOnMobile()"
+                        >
+                            {{ __('Attendance audit') }}
                         </x-sidebar.nav-link>
                     </x-sidebar.nav-group>
 

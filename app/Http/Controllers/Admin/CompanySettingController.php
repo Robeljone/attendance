@@ -23,6 +23,8 @@ class CompanySettingController extends Controller
             'company_name' => ['required', 'string', 'max:255'],
             'timezone' => ['required', 'timezone'],
             'currency' => ['required', 'string', 'size:3'],
+            'income_tax_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'pension_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'allowed_ip_cidrs' => ['nullable', 'string'],
             'enforce_company_network' => ['nullable', 'boolean'],
         ]);
@@ -38,6 +40,8 @@ class CompanySettingController extends Controller
             'company_name' => $validated['company_name'],
             'timezone' => $validated['timezone'],
             'currency' => strtoupper($validated['currency']),
+            'income_tax_percent' => $validated['income_tax_percent'] ?? 0,
+            'pension_percent' => $validated['pension_percent'] ?? 0,
             'allowed_ip_cidrs' => $cidrs,
             'enforce_company_network' => $request->boolean('enforce_company_network'),
         ]);

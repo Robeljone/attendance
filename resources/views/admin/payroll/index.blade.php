@@ -29,19 +29,21 @@
                 <tbody class="ui-tbody">
                     @forelse ($payrollPeriods as $period)
                         @php
-                            $periodStatus = strtolower((string) ($period->status ?? ''));
+                            $periodStatus = strtolower((string) ($period->status?->value ?? $period->status ?? ''));
                             $periodTone = match ($periodStatus) {
                                 'finalized', 'paid', 'completed' => 'green',
+                                'pending_approval' => 'indigo',
                                 'draft' => 'gray',
                                 default => 'indigo',
                             };
+                            $periodLabel = $period->status?->label() ?? ($period->status ?? '—');
                         @endphp
                         <tr class="ui-tr">
                             <td class="ui-td-strong">{{ $period->name }}</td>
                             <td class="ui-td">{{ $period->start_date?->format('M j, Y') }}</td>
                             <td class="ui-td">{{ $period->end_date?->format('M j, Y') }}</td>
                             <td class="ui-td">
-                                <x-ui.badge :tone="$periodTone">{{ $period->status ?? '—' }}</x-ui.badge>
+                                <x-ui.badge :tone="$periodTone">{{ $periodLabel }}</x-ui.badge>
                             </td>
                             <td class="ui-td-right">
                                 <div class="ui-actions">

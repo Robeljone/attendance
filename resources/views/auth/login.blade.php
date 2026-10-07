@@ -1,7 +1,21 @@
 <x-guest-layout>
+    @php
+        $isStaffPortal = ($portal ?? 'employee') === 'staff';
+        $formAction = $isStaffPortal ? route('admin.login.store') : route('login.store');
+        $heading = $isStaffPortal ? __('Staff sign in') : __('Employee sign in');
+        $subtitle = $isStaffPortal
+            ? __('HR, manager, and admin accounts')
+            : __('Employee portal access');
+    @endphp
+
+    <div class="mb-6 text-center">
+        <h1 class="text-xl font-semibold text-gray-900">{{ $heading }}</h1>
+        <p class="mt-1 text-sm text-gray-500">{{ $subtitle }}</p>
+    </div>
+
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}" class="space-y-6">
+    <form method="POST" action="{{ $formAction }}" class="space-y-6">
         @csrf
 
         <div>
@@ -38,4 +52,16 @@
             </x-primary-button>
         </div>
     </form>
+
+    <p class="mt-6 text-center text-sm text-gray-500">
+        @if ($isStaffPortal)
+            <a href="{{ route('login') }}" class="font-medium text-indigo-600 underline hover:text-indigo-500">
+                {{ __('Employee login') }}
+            </a>
+        @else
+            <a href="{{ route('admin.login') }}" class="font-medium text-indigo-600 underline hover:text-indigo-500">
+                {{ __('Staff login') }}
+            </a>
+        @endif
+    </p>
 </x-guest-layout>

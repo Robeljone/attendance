@@ -15,6 +15,15 @@ class AuthenticationTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200);
+        $response->assertSee(__('Employee sign in'));
+    }
+
+    public function test_staff_login_screen_can_be_rendered(): void
+    {
+        $response = $this->get('/admin/login');
+
+        $response->assertStatus(200);
+        $response->assertSee(__('Staff sign in'));
     }
 
     public function test_users_can_authenticate_using_the_login_screen(): void
@@ -49,6 +58,6 @@ class AuthenticationTest extends TestCase
         $response = $this->actingAs($user)->post('/logout');
 
         $this->assertGuest();
-        $response->assertRedirect('/');
+        $response->assertRedirect(route('login'));
     }
 }

@@ -4,17 +4,23 @@ namespace App\Http\Controllers\Portal;
 
 use App\Actions\ClockInAction;
 use App\Actions\ClockOutAction;
+use App\Actions\RecordEmployeeAuditLogAction;
 use App\Enums\AttendanceMethod;
+use App\Enums\EmployeeAuditAction;
+use App\Enums\EmployeeAuditOutcome;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceRecord;
 use App\Models\QrAttendanceToken;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
+    public function __construct(private RecordEmployeeAuditLogAction $recordEmployeeAuditLog) {}
+
     public function index(Request $request): View
     {
         $employee = $request->user()->employee;
@@ -54,11 +60,42 @@ class AttendanceController extends Controller
 
         $token = $this->validatedQrToken($request);
 
-        $clockIn->handle(
-            $employee,
-            AttendanceMethod::Qr,
-            $request->ip() ?? '',
-            'QR station: '.$token->station_name,
+        try {
+            $clockIn->handle(
+                $employee,
+                AttendanceMethod::Qr,
+                $request->ip() ?? '',
+                'QR station: '.$token->station_name,
+            );
+        } catch (ValidationException $exception) {
+            $this->recordEmployeeAuditLog->handle(
+                action: EmployeeAuditAction::ClockIn,
+                outcome: EmployeeAuditOutcome::Failed,
+                employee: $employee,
+                user: $request->user(),
+                ip: $request->ip(),
+                message: collect($exception->errors())->flatten()->first() ?? 'Clock in failed.',
+                context: [
+                    'station' => $token->station_name,
+                ],
+                request: $request,
+            );
+
+            throw $exception;
+        }
+
+        $this->recordEmployeeAuditLog->handle(
+            action: EmployeeAuditAction::ClockIn,
+            outcome: EmployeeAuditOutcome::Success,
+            employee: $employee,
+            user: $request->user(),
+            ip: $request->ip(),
+            message: 'Clocked in via QR.',
+            context: [
+                'station' => $token->station_name,
+                'method' => AttendanceMethod::Qr->value,
+            ],
+            request: $request,
         );
 
         return back()->with('success', 'Clocked in successfully.');
@@ -71,11 +108,42 @@ class AttendanceController extends Controller
 
         $token = $this->validatedQrToken($request);
 
-        $clockOut->handle(
-            $employee,
-            AttendanceMethod::Qr,
-            $request->ip() ?? '',
-            'QR station: '.$token->station_name,
+        try {
+            $clockOut->handle(
+                $employee,
+                AttendanceMethod::Qr,
+                $request->ip() ?? '',
+                'QR station: '.$token->station_name,
+            );
+        } catch (ValidationException $exception) {
+            $this->recordEmployeeAuditLog->handle(
+                action: EmployeeAuditAction::ClockOut,
+                outcome: EmployeeAuditOutcome::Failed,
+                employee: $employee,
+                user: $request->user(),
+                ip: $request->ip(),
+                message: collect($exception->errors())->flatten()->first() ?? 'Clock out failed.',
+                context: [
+                    'station' => $token->station_name,
+                ],
+                request: $request,
+            );
+
+            throw $exception;
+        }
+
+        $this->recordEmployeeAuditLog->handle(
+            action: EmployeeAuditAction::ClockOut,
+            outcome: EmployeeAuditOutcome::Success,
+            employee: $employee,
+            user: $request->user(),
+            ip: $request->ip(),
+            message: 'Clocked out via QR.',
+            context: [
+                'station' => $token->station_name,
+                'method' => AttendanceMethod::Qr->value,
+            ],
+            request: $request,
         );
 
         return back()->with('success', 'Clocked out successfully.');
@@ -91,21 +159,68 @@ class AttendanceController extends Controller
         ])['token']);
 
         if (! $token) {
+            $this->recordEmployeeAuditLog->handle(
+                action: EmployeeAuditAction::QrScan,
+                outcome: EmployeeAuditOutcome::Failed,
+                employee: $employee,
+                user: $request->user(),
+                ip: $request->ip(),
+                message: 'QR code is invalid or expired.',
+                request: $request,
+            );
+
             return $this->attendanceResponse($request, 'QR code is invalid or expired. Please scan again.', false);
         }
+
+        $this->recordEmployeeAuditLog->handle(
+            action: EmployeeAuditAction::QrScan,
+            outcome: EmployeeAuditOutcome::Success,
+            employee: $employee,
+            user: $request->user(),
+            ip: $request->ip(),
+            message: 'Station QR verified.',
+            context: [
+                'station' => $token->station_name,
+            ],
+            request: $request,
+        );
 
         return $this->attendanceResponse($request, 'Station QR verified. You can clock in or out.');
     }
 
-    public function scanPayload(string $token): RedirectResponse
+    public function scanPayload(string $token, Request $request): RedirectResponse
     {
+        $employee = $request->user()?->employee;
         $valid = $this->findValidQrToken($token);
 
         if (! $valid) {
+            $this->recordEmployeeAuditLog->handle(
+                action: EmployeeAuditAction::QrScan,
+                outcome: EmployeeAuditOutcome::Failed,
+                employee: $employee,
+                user: $request->user(),
+                ip: $request->ip(),
+                message: 'QR code is invalid or expired.',
+                request: $request,
+            );
+
             return redirect()
                 ->route('portal.attendance.index')
                 ->with('error', 'QR code is invalid or expired. Please scan again.');
         }
+
+        $this->recordEmployeeAuditLog->handle(
+            action: EmployeeAuditAction::QrScan,
+            outcome: EmployeeAuditOutcome::Success,
+            employee: $employee,
+            user: $request->user(),
+            ip: $request->ip(),
+            message: 'Station QR verified via scan link.',
+            context: [
+                'station' => $valid->station_name,
+            ],
+            request: $request,
+        );
 
         return redirect()
             ->route('portal.attendance.index', ['scanned_token' => $valid->token])

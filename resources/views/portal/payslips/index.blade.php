@@ -24,6 +24,9 @@
                                         <x-ui.table-action :href="route('portal.payslips.show', $payslip)" icon="eye">
                                             {{ __('View') }}
                                         </x-ui.table-action>
+                                        <x-ui.table-action :href="route('portal.payslips.print', $payslip)" icon="document">
+                                            {{ __('Print') }}
+                                        </x-ui.table-action>
                                     </div>
                                 </td>
                             </tr>

@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\EmployeeAuditAction;
+use App\Enums\EmployeeAuditOutcome;
 use App\Enums\LeaveStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceRecord;
 use App\Models\Employee;
+use App\Models\EmployeeAuditLog;
 use App\Models\LeaveRequest;
 use App\Models\Payslip;
+use App\Support\ResolvesIndexPagination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -57,6 +61,79 @@ class ReportController extends Controller
                 ->count(),
         ];
 
-        return view('admin.reports.index', compact('attendanceSummary', 'payrollSummary', 'from', 'to'));
+        $auditSummary = [
+            'Attendance events' => EmployeeAuditLog::query()->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])->count(),
+            'Network blocked' => EmployeeAuditLog::query()
+                ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+                ->where('outcome', EmployeeAuditOutcome::Blocked)
+                ->count(),
+            'Off-network attempts' => EmployeeAuditLog::query()
+                ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+                ->where('network_allowed', false)
+                ->count(),
+        ];
+
+        return view('admin.reports.index', compact('attendanceSummary', 'payrollSummary', 'auditSummary', 'from', 'to'));
+    }
+
+    public function audit(Request $request): View
+    {
+        $from = $request->date('from')?->toDateString() ?? now()->subDays(7)->toDateString();
+        $to = $request->date('to')?->toDateString() ?? now()->toDateString();
+        $search = ResolvesIndexPagination::search($request);
+
+        $logs = EmployeeAuditLog::query()
+            ->with(['employee.user', 'user'])
+            ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->when($request->filled('employee_id'), fn ($query) => $query->where('employee_id', $request->integer('employee_id')))
+            ->when($request->filled('action'), function ($query) use ($request): void {
+                $action = EmployeeAuditAction::tryFrom((string) $request->string('action'));
+                if ($action) {
+                    $query->where('action', $action);
+                }
+            })
+            ->when($request->filled('outcome'), function ($query) use ($request): void {
+                $outcome = EmployeeAuditOutcome::tryFrom((string) $request->string('outcome'));
+                if ($outcome) {
+                    $query->where('outcome', $outcome);
+                }
+            })
+            ->when($request->filled('network'), function ($query) use ($request): void {
+                if ($request->string('network')->toString() === 'allowed') {
+                    $query->where('network_allowed', true);
+                }
+
+                if ($request->string('network')->toString() === 'not_allowed') {
+                    $query->where('network_allowed', false);
+                }
+            })
+            ->when($search, function ($query) use ($search): void {
+                $query->where(function ($inner) use ($search): void {
+                    $inner->where('ip_address', 'like', "%{$search}%")
+                        ->orWhere('message', 'like', "%{$search}%")
+                        ->orWhereHas('employee', function ($employeeQuery) use ($search): void {
+                            $employeeQuery->where('employee_number', 'like', "%{$search}%")
+                                ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"));
+                        })
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->latest('id')
+            ->paginate(ResolvesIndexPagination::perPage($request, 25))
+            ->withQueryString();
+
+        $employees = Employee::query()
+            ->with('user')
+            ->orderBy('employee_number')
+            ->get();
+
+        return view('admin.reports.audit', [
+            'logs' => $logs,
+            'employees' => $employees,
+            'actions' => EmployeeAuditAction::cases(),
+            'outcomes' => EmployeeAuditOutcome::cases(),
+            'from' => $from,
+            'to' => $to,
+        ]);
     }
 }

@@ -50,6 +50,33 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user();
+        $expectsStaff = $this->isStaffPortal();
+
+        if ($expectsStaff && ! $user?->isStaff()) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => __('Use the employee login for this account.'),
+            ]);
+        }
+
+        if (! $expectsStaff && $user?->isStaff()) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => __('Use the staff login for this account.'),
+            ]);
+        }
+
+        if ($user && ! $user->is_active) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => __('This account is inactive.'),
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
@@ -82,5 +109,10 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    public function isStaffPortal(): bool
+    {
+        return $this->routeIs('admin.login', 'admin.login.store');
     }
 }

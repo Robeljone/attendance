@@ -12,6 +12,7 @@ use App\Models\CompanySetting;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\LeaveType;
+use App\Models\PayComponent;
 use App\Models\User;
 use App\Models\WorkSchedule;
 use Illuminate\Database\Seeder;
@@ -22,12 +23,16 @@ class HrDemoSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(PayComponentSeeder::class);
+
         CompanySetting::query()->updateOrCreate(['id' => 1], [
             'company_name' => 'Attendance HR',
             'timezone' => 'UTC',
             'allowed_ip_cidrs' => ['127.0.0.1/32', '::1/128', '192.168.0.0/16', '10.0.0.0/8'],
             'enforce_company_network' => true,
             'currency' => 'USD',
+            'income_tax_percent' => 10,
+            'pension_percent' => 7,
         ]);
 
         $hr = Department::query()->updateOrCreate(['code' => 'HR'], [
@@ -90,6 +95,8 @@ class HrDemoSeeder extends Seeder
             'emergency_contact_phone' => '+10000000011',
             'emergency_contact_relationship' => 'Spouse',
             'base_salary' => 7500,
+            'housing_allowance' => 800,
+            'transport_allowance' => 300,
             'bank_account' => 'BANK-001-7788',
             'status' => EmploymentStatus::Active,
             'gender' => Gender::Female,
@@ -133,6 +140,8 @@ class HrDemoSeeder extends Seeder
             'emergency_contact_phone' => '+10000000022',
             'emergency_contact_relationship' => 'Sibling',
             'base_salary' => 5200,
+            'housing_allowance' => 500,
+            'transport_allowance' => 250,
             'bank_account' => 'BANK-100-4422',
             'status' => EmploymentStatus::Active,
             'gender' => Gender::Male,
@@ -176,6 +185,8 @@ class HrDemoSeeder extends Seeder
             'emergency_contact_phone' => '+10000000033',
             'emergency_contact_relationship' => 'Spouse',
             'base_salary' => 6400,
+            'housing_allowance' => 600,
+            'transport_allowance' => 250,
             'bank_account' => 'BANK-050-9911',
             'status' => EmploymentStatus::Active,
             'gender' => Gender::Female,
@@ -198,6 +209,35 @@ class HrDemoSeeder extends Seeder
             'end_year' => 2014,
             'grade' => 'First Class',
         ], 'Tax Certificate');
+
+        foreach ([$adminEmployee, $employee, $manager] as $seededEmployee) {
+            $this->syncLegacyAllowancesToComponents($seededEmployee);
+        }
+    }
+
+    private function syncLegacyAllowancesToComponents(Employee $employee): void
+    {
+        $housing = PayComponent::query()->where('code', 'housing_allowance')->first();
+        $transport = PayComponent::query()->where('code', 'transport_allowance')->first();
+        $sync = [];
+
+        if ($housing && (float) $employee->housing_allowance > 0) {
+            $sync[$housing->id] = [
+                'amount' => $employee->housing_allowance,
+                'is_enabled' => true,
+            ];
+        }
+
+        if ($transport && (float) $employee->transport_allowance > 0) {
+            $sync[$transport->id] = [
+                'amount' => $employee->transport_allowance,
+                'is_enabled' => true,
+            ];
+        }
+
+        if ($sync !== []) {
+            $employee->payComponents()->syncWithoutDetaching($sync);
+        }
     }
 
     /**

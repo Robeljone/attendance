@@ -24,4 +24,6 @@ return [
 
     'default_work_hours_per_day' => 8,
 
+    'overtime_multiplier' => (float) env('ATTENDANCE_OVERTIME_MULTIPLIER', 1.5),
+
 ];

@@ -20,7 +20,9 @@
     );
     $selectedDepartment = $field('department_id', $employee?->department_id);
     $hireDate = $field('hire_date', $employee?->hire_date?->format('Y-m-d'));
+    $terminationDate = $field('termination_date', $employee?->termination_date?->format('Y-m-d'));
     $dateOfBirth = $field('date_of_birth', $employee?->date_of_birth?->format('Y-m-d'));
+    $assignedComponents = $employee?->payComponents?->keyBy('id') ?? collect();
     $currentGender = $field(
         'gender',
         $employee?->gender instanceof \BackedEnum ? $employee->gender->value : $employee?->gender
@@ -100,6 +102,12 @@
                 <x-input-label for="{{ $prefix }}-hire_date" :value="__('Hire date')" />
                 <x-text-input id="{{ $prefix }}-hire_date" name="hire_date" type="date" class="mt-1 block w-full" :value="$hireDate" />
                 <x-input-error class="mt-2" :messages="$errors->get('hire_date')" />
+            </div>
+
+            <div>
+                <x-input-label for="{{ $prefix }}-termination_date" :value="__('Termination date')" />
+                <x-text-input id="{{ $prefix }}-termination_date" name="termination_date" type="date" class="mt-1 block w-full" :value="$terminationDate" />
+                <x-input-error class="mt-2" :messages="$errors->get('termination_date')" />
             </div>
 
             <div>
@@ -243,6 +251,70 @@
             </div>
         </div>
     </div>
+
+    @if (($payComponents ?? collect())->isNotEmpty())
+        <div class="border-t border-gray-100 pt-5">
+            <h3 class="text-sm font-semibold text-gray-900">{{ __('Pay components') }}</h3>
+            <p class="mt-1 text-sm text-gray-500">{{ __('Enable allowances or deductions for this employee. Percent components use % of base salary.') }}</p>
+            <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                @foreach ($payComponents as $payComponent)
+                    @php
+                        $assigned = $assignedComponents->get($payComponent->id);
+                        $legacyAmount = match ($payComponent->code) {
+                            'housing_allowance' => $employee?->housing_allowance,
+                            'transport_allowance' => $employee?->transport_allowance,
+                            default => null,
+                        };
+                        $defaultAmount = old(
+                            'pay_components.'.$payComponent->id.'.amount',
+                            $assigned?->pivot?->amount ?? $legacyAmount ?? $payComponent->default_amount
+                        );
+                        $enabled = (bool) old(
+                            'pay_components.'.$payComponent->id.'.enabled',
+                            $assigned !== null || (float) ($legacyAmount ?? 0) > 0
+                        );
+                        $amountLabel = $payComponent->calculation->value === 'percent_of_base' ? __('Percent') : __('Amount');
+                    @endphp
+                    <div class="rounded-lg border border-gray-200 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $payComponent->name }}</p>
+                                <p class="text-xs text-gray-500">
+                                    {{ $payComponent->type->label() }}
+                                    · {{ $payComponent->calculation->label() }}
+                                    @if ($payComponent->is_taxable && $payComponent->type->value === 'earning')
+                                        · {{ __('Taxable') }}
+                                    @endif
+                                </p>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                                <input
+                                    type="checkbox"
+                                    name="pay_components[{{ $payComponent->id }}][enabled]"
+                                    value="1"
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                    @checked($enabled)
+                                />
+                                {{ __('Enable') }}
+                            </label>
+                        </div>
+                        <div class="mt-3">
+                            <x-input-label for="{{ $prefix }}-pay-component-{{ $payComponent->id }}" :value="$amountLabel" />
+                            <x-text-input
+                                id="{{ $prefix }}-pay-component-{{ $payComponent->id }}"
+                                name="pay_components[{{ $payComponent->id }}][amount]"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                class="mt-1 block w-full"
+                                :value="$defaultAmount"
+                            />
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <div class="border-t border-gray-100 pt-5">
         <h3 class="text-sm font-semibold text-gray-900">{{ __('Emergency contact') }}</h3>

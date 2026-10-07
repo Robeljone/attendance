@@ -12,11 +12,23 @@ use Illuminate\View\View;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Display the employee login view.
      */
     public function create(): View
     {
-        return view('auth.login');
+        return view('auth.login', [
+            'portal' => 'employee',
+        ]);
+    }
+
+    /**
+     * Display the staff (HR / manager / admin) login view.
+     */
+    public function createStaff(): View
+    {
+        return view('auth.login', [
+            'portal' => 'staff',
+        ]);
     }
 
     /**
@@ -40,12 +52,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $wasStaff = $request->user()?->isStaff() ?? false;
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route($wasStaff ? 'admin.login' : 'login');
     }
 }

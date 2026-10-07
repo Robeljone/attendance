@@ -8,7 +8,9 @@ use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\EmployeeDocumentController;
 use App\Http\Controllers\Admin\EmployeeEducationController;
 use App\Http\Controllers\Admin\LeaveRequestController as AdminLeaveRequestController;
+use App\Http\Controllers\Admin\PayComponentController;
 use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\PayslipController as AdminPayslipController;
 use App\Http\Controllers\Admin\QrStationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\WorkScheduleController;
@@ -18,13 +20,18 @@ use App\Http\Controllers\Portal\LeaveRequestController as PortalLeaveRequestCont
 use App\Http\Controllers\Portal\PayslipController;
 use App\Http\Controllers\Portal\ProfileController as PortalProfileController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PwaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('dashboard')
-        : redirect()->route('login');
-});
+        : view('auth.portal-chooser');
+})->name('home');
+
+Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
+Route::get('/sw.js', [PwaController::class, 'serviceWorker'])->name('pwa.service-worker');
+Route::get('/offline', [PwaController::class, 'offline'])->name('pwa.offline');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -50,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/payslips', [PayslipController::class, 'index'])->name('payslips.index');
         Route::get('/payslips/{payslip}', [PayslipController::class, 'show'])->name('payslips.show');
+        Route::get('/payslips/{payslip}/print', [PayslipController::class, 'print'])->name('payslips.print');
 
         Route::get('/my-info', [PortalProfileController::class, 'show'])->name('profile.show');
     });
@@ -66,6 +74,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('schedules', WorkScheduleController::class)
             ->parameters(['schedules' => 'schedule'])
             ->except(['show']);
+        Route::resource('pay-components', PayComponentController::class)
+            ->parameters(['pay-components' => 'payComponent'])
+            ->except(['show']);
 
         Route::get('/attendance', [AdminAttendanceController::class, 'index'])->name('attendance.index');
 
@@ -78,8 +89,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
         Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store');
         Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
+        Route::post('/payroll/{payroll}/regenerate', [PayrollController::class, 'regenerate'])->name('payroll.regenerate');
+        Route::post('/payroll/{payroll}/submit', [PayrollController::class, 'submit'])->name('payroll.submit');
+        Route::post('/payroll/{payroll}/finalize', [PayrollController::class, 'finalize'])->name('payroll.finalize');
+        Route::post('/payroll/{payroll}/mark-paid', [PayrollController::class, 'markPaid'])->name('payroll.mark-paid');
+        Route::get('/payroll/{payroll}/export-bank-csv', [PayrollController::class, 'exportBankCsv'])->name('payroll.export-bank-csv');
+        Route::get('/payroll/{payroll}/payslips/{payslip}', [AdminPayslipController::class, 'show'])->name('payroll.payslips.show');
+        Route::get('/payroll/{payroll}/payslips/{payslip}/print', [AdminPayslipController::class, 'print'])->name('payroll.payslips.print');
+        Route::post('/payroll/{payroll}/payslips/{payslip}/adjustments', [AdminPayslipController::class, 'storeAdjustment'])->name('payroll.payslips.adjustments.store');
+        Route::delete('/payroll/{payroll}/payslips/{payslip}/adjustments/{line}', [AdminPayslipController::class, 'destroyAdjustment'])->name('payroll.payslips.adjustments.destroy');
 
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/audit', [ReportController::class, 'audit'])->name('reports.audit');
 
         Route::get('/settings', [CompanySettingController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [CompanySettingController::class, 'update'])->name('settings.update');

@@ -71,6 +71,25 @@
                     <dt class="font-medium text-gray-500">{{ __('Base salary') }}</dt>
                     <dd class="mt-1 text-gray-900">{{ $employee->base_salary !== null ? number_format((float) $employee->base_salary, 2) : '—' }}</dd>
                 </div>
+                <div class="sm:col-span-2">
+                    <dt class="font-medium text-gray-500">{{ __('Pay components') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        @forelse ($employee->payComponents as $component)
+                            <div class="flex justify-between gap-4 text-sm">
+                                <span>{{ $component->name }}</span>
+                                <span>{{ number_format((float) $component->pivot->amount, 2) }}</span>
+                            </div>
+                        @empty
+                            <span>{{ __('None assigned') }}</span>
+                            @if ((float) ($employee->housing_allowance ?? 0) > 0 || (float) ($employee->transport_allowance ?? 0) > 0)
+                                <div class="mt-1 text-sm text-gray-600">
+                                    {{ __('Housing') }}: {{ number_format((float) $employee->housing_allowance, 2) }}
+                                    · {{ __('Transport') }}: {{ number_format((float) $employee->transport_allowance, 2) }}
+                                </div>
+                            @endif
+                        @endforelse
+                    </dd>
+                </div>
                 <div>
                     <dt class="font-medium text-gray-500">{{ __('Bank account') }}</dt>
                     <dd class="mt-1 text-gray-900">{{ $employee->bank_account ?? '—' }}</dd>

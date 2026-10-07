@@ -25,12 +25,15 @@ class Employee extends Model
         'phone',
         'position',
         'hire_date',
+        'termination_date',
         'date_of_birth',
         'address',
         'emergency_contact_name',
         'emergency_contact_phone',
         'emergency_contact_relationship',
         'base_salary',
+        'housing_allowance',
+        'transport_allowance',
         'bank_account',
         'status',
         'notes',
@@ -48,8 +51,11 @@ class Employee extends Model
     {
         return [
             'hire_date' => 'date',
+            'termination_date' => 'date',
             'date_of_birth' => 'date',
             'base_salary' => 'decimal:2',
+            'housing_allowance' => 'decimal:2',
+            'transport_allowance' => 'decimal:2',
             'status' => EmploymentStatus::class,
             'gender' => Gender::class,
             'marital_status' => MaritalStatus::class,
@@ -78,6 +84,11 @@ class Employee extends Model
         return $this->hasMany(AttendanceRecord::class);
     }
 
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(EmployeeAuditLog::class);
+    }
+
     public function leaveRequests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);
@@ -86,6 +97,14 @@ class Employee extends Model
     public function payslips(): HasMany
     {
         return $this->hasMany(Payslip::class);
+    }
+
+    public function payComponents(): BelongsToMany
+    {
+        return $this->belongsToMany(PayComponent::class)
+            ->withPivot(['amount', 'is_enabled'])
+            ->withTimestamps()
+            ->orderBy('pay_components.sort_order');
     }
 
     public function educations(): HasMany

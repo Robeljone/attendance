@@ -2,13 +2,23 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="theme-color" content="{{ $companyBranding?->primary_color ?: '#4f46e5' }}">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="{{ $companyBranding?->company_name ?: config('app.name', 'Laravel') }}">
 
         <title>{{ $companyBranding?->company_name ?: config('app.name', 'Laravel') }}</title>
 
+        <link rel="manifest" href="{{ route('pwa.manifest') }}">
+        <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
+
         @if ($companyBranding?->faviconUrl())
             <link rel="icon" href="{{ $companyBranding->faviconUrl() }}" type="image/x-icon">
+        @else
+            <link rel="icon" href="{{ asset('icons/icon-192.png') }}" type="image/png">
         @endif
 
         <link rel="preconnect" href="https://fonts.bunny.net">

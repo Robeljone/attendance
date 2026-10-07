@@ -11,12 +11,13 @@ Built with **Laravel 13**, **PHP 8.3**, **Blade**, **Alpine.js**, **Tailwind CSS
 | Area | What you get |
 | --- | --- |
 | **Employee portal** | Clock in/out, QR scan attendance, leave requests (with attachments), payslips, personal profile |
-| **Admin / HR** | Employees, departments, work schedules, attendance review, leave approvals, payroll, reports, company settings |
+| **Admin / HR** | Employees, departments, work schedules, attendance review, leave approvals, advanced payroll (components, tax/pension, proration, approval→paid, bank CSV), reports, company settings |
 | **QR station** | Rotating QR tokens for desk/kiosk check-in |
 | **Network gate** | Optional IP/CIDR allowlist so clock actions only work on the company network |
 | **Employee records** | Profile fields, education history, document uploads |
 | **Branding** | Super Admin can customize company branding |
-| **Auth** | Laravel Breeze-style login, email verification, forced password change for new accounts |
+| **Auth** | Separate employee (`/login`) and staff (`/admin/login`) portals, email verification, forced password change for new accounts |
+| **PWA** | Installable progressive web app (manifest + service worker + offline fallback) |
 
 ---
 
@@ -54,6 +55,16 @@ composer run dev
 ```
 
 Then open the app URL from your `.env` (`APP_URL`, default `http://localhost:8000`).
+
+### Login URLs
+
+| Portal | URL | Who |
+| --- | --- | --- |
+| Chooser | `/` | Pick employee or staff |
+| Employee | `/login` | `employee` |
+| Staff | `/admin/login` | `superadmin`, `admin`, `hr`, `manager` |
+
+On a phone (HTTPS in production), use the browser’s **Add to Home Screen / Install** to install the PWA.
 
 ### Manual setup (equivalent)
 

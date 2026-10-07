@@ -32,6 +32,8 @@ class EmployeeFactory extends Factory
             'emergency_contact_phone' => fake()->optional()->numerify('+1##########'),
             'emergency_contact_relationship' => fake()->optional()->randomElement(['Spouse', 'Parent', 'Sibling', 'Friend']),
             'base_salary' => fake()->randomFloat(2, 2000, 9000),
+            'housing_allowance' => 0,
+            'transport_allowance' => 0,
             'bank_account' => fake()->optional()->iban(),
             'status' => EmploymentStatus::Active,
             'notes' => null,

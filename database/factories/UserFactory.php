@@ -43,6 +43,20 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function hr(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Hr,
+        ]);
+    }
+
+    public function manager(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Manager,
+        ]);
+    }
+
     public function superAdmin(): static
     {
         return $this->state(fn (array $attributes) => [

@@ -18,6 +18,8 @@ class CompanySetting extends Model
         'allowed_ip_cidrs',
         'enforce_company_network',
         'currency',
+        'income_tax_percent',
+        'pension_percent',
     ];
 
     protected function casts(): array
@@ -25,6 +27,8 @@ class CompanySetting extends Model
         return [
             'allowed_ip_cidrs' => 'array',
             'enforce_company_network' => 'boolean',
+            'income_tax_percent' => 'decimal:2',
+            'pension_percent' => 'decimal:2',
         ];
     }
 
