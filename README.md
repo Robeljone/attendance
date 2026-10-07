@@ -1,58 +1,150 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Attendance HR
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Internal HR and attendance platform for small-to-medium teams. Employees clock in/out (including QR station scanning), request leave, and view payslips. Admins and HR manage people, schedules, payroll periods, reports, and company settings.
 
-## About Laravel
+Built with **Laravel 13**, **PHP 8.3**, **Blade**, **Alpine.js**, **Tailwind CSS**, and **Vite**. The UI is mobile-friendly (collapsible sidebar, responsive layouts).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Area | What you get |
+| --- | --- |
+| **Employee portal** | Clock in/out, QR scan attendance, leave requests (with attachments), payslips, personal profile |
+| **Admin / HR** | Employees, departments, work schedules, attendance review, leave approvals, payroll, reports, company settings |
+| **QR station** | Rotating QR tokens for desk/kiosk check-in |
+| **Network gate** | Optional IP/CIDR allowlist so clock actions only work on the company network |
+| **Employee records** | Profile fields, education history, document uploads |
+| **Branding** | Super Admin can customize company branding |
+| **Auth** | Laravel Breeze-style login, email verification, forced password change for new accounts |
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Roles
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Role | Access |
+| --- | --- |
+| `superadmin` | Full admin + branding |
+| `admin` / `hr` | HR admin area (employees, leaves, payroll, reports, settings, QR station) |
+| `manager` | Staff portal (and manager-oriented flows as configured) |
+| `employee` | Employee portal only |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
+## Requirements
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- PHP **8.3+** with common Laravel extensions (mbstring, openssl, pdo, tokenizer, xml, ctype, json, fileinfo)
+- Composer 2
+- Node.js **18+** and npm
+- SQLite (default) or MySQL/PostgreSQL
+
+---
+
+## Quick start
 
 ```bash
-composer require laravel/boost --dev
+# 1. Install PHP & JS dependencies, create .env, generate key, migrate, build assets
+composer setup
 
-php artisan boost:install
+# 2. Seed demo data (departments, schedules, leave types, sample users)
+php artisan db:seed
+
+# 3. Run the app (HTTP + Vite + queue/logs as configured)
+composer run dev
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Then open the app URL from your `.env` (`APP_URL`, default `http://localhost:8000`).
 
-## Contributing
+### Manual setup (equivalent)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer install
+cp .env.example .env   # Windows: copy .env.example .env
+php artisan key:generate
+php artisan migrate
+npm install
+npm run build
+php artisan db:seed
+php artisan serve      # or: composer run dev
+```
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Demo accounts
 
-## Security Vulnerabilities
+After `php artisan db:seed`, all of these use password **`password`**:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Email | Role |
+| --- | --- |
+| `superadmin@company.test` | Super Admin |
+| `admin@company.test` | Admin |
+| `manager@company.test` | Manager |
+| `employee@company.test` | Employee |
+
+New employees created in admin get the default password from `AUTH_DEFAULT_EMPLOYEE_PASSWORD` (see `.env.example`) and may be required to change it on first login.
+
+---
+
+## Attendance & network settings
+
+Configured via `.env` (and mirrored in company settings where applicable):
+
+| Variable | Purpose |
+| --- | --- |
+| `ATTENDANCE_ENFORCE_NETWORK` | When `true`, clock-in/out and QR scan require an allowed client IP |
+| `ATTENDANCE_ALLOWED_IP_CIDRS` | Comma-separated CIDRs (e.g. `127.0.0.1/32,192.168.0.0/16,10.0.0.0/8`) |
+| `ATTENDANCE_QR_TTL` | QR token lifetime in seconds (default `60`) |
+
+See `config/attendance.php` for defaults.
+
+**QR flow (typical):** open **Admin → QR station** on a kiosk display; employees scan from **Portal → Attendance** on their phone while on the company network.
+
+---
+
+## Useful commands
+
+```bash
+composer run dev          # local development
+composer test             # clear config + run PHPUnit
+php artisan test --compact
+npm run build             # production assets
+npm run dev               # Vite only
+vendor/bin/pint --dirty   # format changed PHP files
+```
+
+---
+
+## Project layout (high level)
+
+```
+app/
+  Enums/                 # Roles, leave status, employment status, etc.
+  Http/Controllers/
+    Admin/               # HR back office
+    Portal/              # Employee self-service
+  Models/                # Employee, AttendanceRecord, LeaveRequest, Payslip, …
+  Http/Middleware/       # Role + company network checks
+config/attendance.php    # Network allowlist + QR TTL
+database/migrations/
+database/seeders/        # HrDemoSeeder and related seeders
+resources/views/
+  admin/                 # Admin Blade screens
+  portal/                # Employee portal
+routes/web.php           # App routes
+```
+
+---
+
+## Testing
+
+```bash
+php artisan test --compact
+```
+
+Prefer factories and feature tests under `tests/`. When adding models, keep factories/seeders in sync with existing patterns.
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Application code follows the project’s license terms. Laravel framework components remain under the [MIT license](https://opensource.org/licenses/MIT).
