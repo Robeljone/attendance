@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+@layer components {
+    .ui-page {
+        @apply py-8 sm:py-10;
+    }
+
+    .ui-page-inner {
+        @apply w-full space-y-6 px-4 sm:px-6 lg:px-8;
+    }
+
+    .ui-page-inner-sm {
+        @apply mx-auto max-w-3xl space-y-6 px-4 sm:px-6 lg:px-8;
+    }
+
+    .ui-page-inner-md {
+        @apply mx-auto max-w-4xl space-y-6 px-4 sm:px-6 lg:px-8;
+    }
+
+    .ui-card {
+        @apply overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm;
+    }
+
+    .ui-card-body {
+        @apply p-6;
+    }
+
+    .ui-card-header {
+        @apply border-b border-gray-100 px-6 py-4;
+    }
+
+    .ui-card-title {
+        @apply text-base font-semibold text-gray-900;
+    }
+
+    .ui-card-subtitle {
+        @apply mt-0.5 text-sm text-gray-500;
+    }
+
+    .ui-table-wrap {
+        @apply overflow-x-auto;
+    }
+
+    .ui-table {
+        @apply min-w-full divide-y divide-gray-200;
+    }
+
+    .ui-thead {
+        @apply bg-gray-50;
+    }
+
+    .ui-th {
+        @apply px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500;
+    }
+
+    .ui-th-right {
+        @apply px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500;
+    }
+
+    .ui-tbody {
+        @apply divide-y divide-gray-100 bg-white;
+    }
+
+    .ui-tr {
+        @apply transition hover:bg-gray-50/80;
+    }
+
+    .ui-td {
+        @apply whitespace-nowrap px-6 py-4 text-sm text-gray-600;
+    }
+
+    .ui-td-strong {
+        @apply whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900;
+    }
+
+    .ui-td-right {
+        @apply whitespace-nowrap px-6 py-4 text-right text-sm;
+    }
+
+    .ui-td-empty {
+        @apply px-6 py-10 text-center text-sm text-gray-500;
+    }
+
+    .ui-link {
+        @apply font-medium text-indigo-600 transition hover:text-indigo-800;
+    }
+
+    .ui-link-danger {
+        @apply font-medium text-red-600 transition hover:text-red-800;
+    }
+
+    .ui-action {
+        @apply inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-800;
+    }
+
+    .ui-action-danger {
+        @apply inline-flex items-center gap-1.5 text-sm font-medium text-red-600 transition hover:text-red-800;
+    }
+
+    .ui-action-success {
+        @apply inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 transition hover:text-emerald-800;
+    }
+
+    .ui-action-amber {
+        @apply inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 transition hover:text-amber-800;
+    }
+
+    .ui-action-icon {
+        @apply h-4 w-4 shrink-0;
+    }
+
+    .ui-actions {
+        @apply inline-flex flex-wrap items-center justify-end gap-3;
+    }
+
+    .ui-stat {
+        @apply rounded-xl border border-gray-100 bg-gray-50 px-4 py-3;
+    }
+
+    .ui-stat-label {
+        @apply text-xs font-medium uppercase tracking-wide text-gray-500;
+    }
+
+    .ui-stat-value {
+        @apply mt-1 text-2xl font-semibold tabular-nums text-gray-900;
+    }
+
+    .ui-select {
+        @apply mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500;
+    }
+
+    .ui-textarea {
+        @apply mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500;
+    }
+
+    .ui-pagination {
+        @apply border-t border-gray-100 px-6 py-4;
+    }
+
+    .ui-quick-link {
+        @apply inline-flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700;
+    }
+
+    /* Neutralize html5-qrcode injected markup; UI chrome is Tailwind in Blade. */
+    .qr-reader,
+    .qr-reader > *,
+    .qr-reader video,
+    .qr-reader canvas {
+        @apply h-full w-full border-0 p-0;
+    }
+
+    .qr-reader video {
+        @apply object-cover;
+    }
+
+    .qr-reader img,
+    .qr-reader select,
+    .qr-reader button,
+    .qr-reader span,
+    #qr-reader__dashboard_section,
+    #qr-reader__dashboard_section_csr,
+    #qr-reader__dashboard_section_swaplink,
+    #qr-reader__header_message,
+    #qr-shaded-region {
+        @apply !hidden;
+    }
+}
