@@ -33,6 +33,7 @@ trait ValidatesEmployeeProfile
                 Rule::unique('employees', 'employee_number')->ignore($employeeId),
             ],
             'department_id' => ['nullable', 'exists:departments,id'],
+            'salary_structure_id' => ['nullable', 'exists:salary_structures,id'],
             'work_schedule_id' => ['nullable', 'exists:work_schedules,id'],
             'phone' => ['nullable', 'string', 'max:50'],
             'position' => ['nullable', 'string', 'max:100'],

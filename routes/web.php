@@ -1,21 +1,26 @@
 <?php
 
 use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
+use App\Http\Controllers\Admin\BonusRunController;
 use App\Http\Controllers\Admin\BrandingController;
 use App\Http\Controllers\Admin\CompanySettingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\EmployeeDocumentController;
 use App\Http\Controllers\Admin\EmployeeEducationController;
+use App\Http\Controllers\Admin\ExpenseClaimController as AdminExpenseClaimController;
 use App\Http\Controllers\Admin\LeaveRequestController as AdminLeaveRequestController;
 use App\Http\Controllers\Admin\PayComponentController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PayslipController as AdminPayslipController;
 use App\Http\Controllers\Admin\QrStationController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SalaryIncrementController;
+use App\Http\Controllers\Admin\SalaryStructureController;
 use App\Http\Controllers\Admin\WorkScheduleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Portal\AttendanceController as PortalAttendanceController;
+use App\Http\Controllers\Portal\ExpenseClaimController as PortalExpenseClaimController;
 use App\Http\Controllers\Portal\LeaveRequestController as PortalLeaveRequestController;
 use App\Http\Controllers\Portal\PayslipController;
 use App\Http\Controllers\Portal\ProfileController as PortalProfileController;
@@ -59,6 +64,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/payslips/{payslip}', [PayslipController::class, 'show'])->name('payslips.show');
         Route::get('/payslips/{payslip}/print', [PayslipController::class, 'print'])->name('payslips.print');
 
+        Route::get('/expenses', [PortalExpenseClaimController::class, 'index'])->name('expense-claims.index');
+        Route::get('/expenses/create', [PortalExpenseClaimController::class, 'create'])->name('expense-claims.create');
+        Route::post('/expenses', [PortalExpenseClaimController::class, 'store'])->name('expense-claims.store');
+        Route::get('/expenses/{expenseClaim}/receipt', [PortalExpenseClaimController::class, 'downloadReceipt'])->name('expense-claims.receipt');
+
         Route::get('/my-info', [PortalProfileController::class, 'show'])->name('profile.show');
     });
 
@@ -77,6 +87,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('pay-components', PayComponentController::class)
             ->parameters(['pay-components' => 'payComponent'])
             ->except(['show']);
+        Route::resource('salary-structures', SalaryStructureController::class)
+            ->parameters(['salary-structures' => 'salaryStructure'])
+            ->except(['show', 'edit']);
+        Route::post('salary-structures/{salaryStructure}/apply', [SalaryStructureController::class, 'apply'])
+            ->name('salary-structures.apply');
 
         Route::get('/attendance', [AdminAttendanceController::class, 'index'])->name('attendance.index');
 
@@ -84,6 +99,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/leaves/{leave}/approve', [AdminLeaveRequestController::class, 'approve'])->name('leaves.approve');
         Route::post('/leaves/{leave}/reject', [AdminLeaveRequestController::class, 'reject'])->name('leaves.reject');
         Route::get('/leaves/{leave}/attachment', [AdminLeaveRequestController::class, 'downloadAttachment'])->name('leaves.attachment');
+
+        Route::get('/expense-claims', [AdminExpenseClaimController::class, 'index'])->name('expense-claims.index');
+        Route::post('/expense-claims/{expenseClaim}/approve', [AdminExpenseClaimController::class, 'approve'])->name('expense-claims.approve');
+        Route::post('/expense-claims/{expenseClaim}/reject', [AdminExpenseClaimController::class, 'reject'])->name('expense-claims.reject');
+        Route::get('/expense-claims/{expenseClaim}/receipt', [AdminExpenseClaimController::class, 'downloadReceipt'])->name('expense-claims.receipt');
+
+        Route::get('/bonus-runs', [BonusRunController::class, 'index'])->name('bonus-runs.index');
+        Route::post('/bonus-runs', [BonusRunController::class, 'store'])->name('bonus-runs.store');
+        Route::post('/bonus-runs/{bonusRun}/apply', [BonusRunController::class, 'apply'])->name('bonus-runs.apply');
+        Route::delete('/bonus-runs/{bonusRun}', [BonusRunController::class, 'destroy'])->name('bonus-runs.destroy');
+
+        Route::get('/salary-increments', [SalaryIncrementController::class, 'index'])->name('salary-increments.index');
+        Route::post('/salary-increments', [SalaryIncrementController::class, 'store'])->name('salary-increments.store');
+        Route::post('/salary-increments/{salaryIncrement}/apply', [SalaryIncrementController::class, 'apply'])->name('salary-increments.apply');
+        Route::delete('/salary-increments/{salaryIncrement}', [SalaryIncrementController::class, 'destroy'])->name('salary-increments.destroy');
 
         Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
         Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\ApplySalaryStructureAction;
 use App\Enums\EducationLevel;
 use App\Enums\EmployeeDocumentType;
 use App\Enums\EmploymentStatus;
@@ -13,6 +14,7 @@ use App\Http\Requests\Admin\UpdateEmployeeRequest;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\PayComponent;
+use App\Models\SalaryStructure;
 use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Support\ResolvesIndexPagination;
@@ -89,7 +91,7 @@ class EmployeeController extends Controller
                 ]);
             }
 
-            $this->syncPayComponents($employee, $validated);
+            $this->syncCompensation($employee, $validated);
 
             return $employee->fresh();
         });
@@ -172,7 +174,7 @@ class EmployeeController extends Controller
                 ]);
             }
 
-            $this->syncPayComponents($employee, $validated);
+            $this->syncCompensation($employee, $validated);
         });
 
         return redirect()->route('admin.employees.show', $employee)->with('success', 'Employee updated successfully.');
@@ -196,6 +198,7 @@ class EmployeeController extends Controller
      *     departments: Collection<int, Department>,
      *     schedules: Collection<int, WorkSchedule>,
      *     payComponents: Collection<int, PayComponent>,
+     *     salaryStructures: Collection<int, SalaryStructure>,
      *     statuses: list<EmploymentStatus>,
      *     genders: list<Gender>,
      *     maritalStatuses: list<MaritalStatus>
@@ -207,10 +210,30 @@ class EmployeeController extends Controller
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(),
             'schedules' => WorkSchedule::query()->where('is_active', true)->orderBy('name')->get(),
             'payComponents' => PayComponent::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'salaryStructures' => SalaryStructure::query()->where('is_active', true)->orderBy('name')->get(),
             'statuses' => EmploymentStatus::cases(),
             'genders' => Gender::cases(),
             'maritalStatuses' => MaritalStatus::cases(),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncCompensation(Employee $employee, array $validated): void
+    {
+        if (! empty($validated['salary_structure_id'])) {
+            $structure = SalaryStructure::query()->find($validated['salary_structure_id']);
+
+            if ($structure) {
+                app(ApplySalaryStructureAction::class)->handle($employee, $structure);
+
+                return;
+            }
+        }
+
+        $employee->update(['salary_structure_id' => null]);
+        $this->syncPayComponents($employee, $validated);
     }
 
     /**
@@ -254,6 +277,7 @@ class EmployeeController extends Controller
     {
         return array_merge([
             'department_id' => $validated['department_id'] ?? null,
+            'salary_structure_id' => $validated['salary_structure_id'] ?? null,
             'employee_number' => $validated['employee_number'],
             'phone' => $validated['phone'] ?? null,
             'position' => $validated['position'] ?? null,

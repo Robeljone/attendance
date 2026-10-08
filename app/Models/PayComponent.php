@@ -42,4 +42,11 @@ class PayComponent extends Model
             ->withPivot(['amount', 'is_enabled'])
             ->withTimestamps();
     }
+
+    public function salaryStructures(): BelongsToMany
+    {
+        return $this->belongsToMany(SalaryStructure::class)
+            ->withPivot(['amount', 'is_enabled'])
+            ->withTimestamps();
+    }
 }

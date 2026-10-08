@@ -116,6 +116,22 @@
                 <x-input-error class="mt-2" :messages="$errors->get('base_salary')" />
             </div>
 
+            @if (($salaryStructures ?? collect())->isNotEmpty())
+                <div>
+                    <x-input-label for="{{ $prefix }}-salary_structure_id" :value="__('Salary structure')" />
+                    <x-ui.select id="{{ $prefix }}-salary_structure_id" name="salary_structure_id">
+                        <option value="">{{ __('None (manual components)') }}</option>
+                        @foreach ($salaryStructures as $structure)
+                            <option value="{{ $structure->id }}" @selected((string) $field('salary_structure_id', $employee?->salary_structure_id) === (string) $structure->id)>
+                                {{ $structure->name }}
+                            </option>
+                        @endforeach
+                    </x-ui.select>
+                    <p class="mt-1 text-xs text-gray-500">{{ __('Selecting a structure on save applies its pay components.') }}</p>
+                    <x-input-error class="mt-2" :messages="$errors->get('salary_structure_id')" />
+                </div>
+            @endif
+
             <div>
                 <x-input-label for="{{ $prefix }}-role" :value="__('Role')" />
                 <x-ui.select id="{{ $prefix }}-role" name="role" required>

@@ -79,5 +79,83 @@
                 <p class="mt-4 text-sm text-gray-500">{{ __('No payroll summary data available.') }}</p>
             @endif
         </x-ui.card>
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <x-ui.card>
+                <h3 class="ui-card-title">{{ __('Payroll by department') }}</h3>
+                @if (($payrollByDepartment ?? collect())->isNotEmpty())
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="ui-table">
+                            <thead class="ui-thead">
+                                <tr>
+                                    <th class="ui-th">{{ __('Department') }}</th>
+                                    <th class="ui-th">{{ __('Payslips') }}</th>
+                                    <th class="ui-th">{{ __('Overtime') }}</th>
+                                    <th class="ui-th">{{ __('Net pay') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="ui-tbody">
+                                @foreach ($payrollByDepartment as $row)
+                                    <tr class="ui-tr">
+                                        <td class="ui-td-strong">{{ $row->department_name }}</td>
+                                        <td class="ui-td">{{ $row->payslip_count }}</td>
+                                        <td class="ui-td">{{ number_format((float) $row->overtime_total, 2) }}</td>
+                                        <td class="ui-td">{{ number_format((float) $row->net_total, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <p class="mt-4 text-sm text-gray-500">{{ __('No department payroll data in this range.') }}</p>
+                @endif
+            </x-ui.card>
+
+            <x-ui.card>
+                <h3 class="ui-card-title">{{ __('Deduction breakdown') }}</h3>
+                @if (($deductionBreakdown ?? collect())->isNotEmpty())
+                    <dl class="mt-4 space-y-3">
+                        @foreach ($deductionBreakdown as $row)
+                            <div class="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 last:border-0">
+                                <dt class="text-sm text-gray-600">{{ $row->label ?: $row->code }}</dt>
+                                <dd class="text-sm font-semibold tabular-nums text-gray-900">{{ number_format((float) $row->total, 2) }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                @else
+                    <p class="mt-4 text-sm text-gray-500">{{ __('No deductions in this range.') }}</p>
+                @endif
+            </x-ui.card>
+        </div>
+
+        <x-ui.card>
+            <h3 class="ui-card-title">{{ __('Monthly payroll trend') }}</h3>
+            @if (($monthlyTrend ?? collect())->isNotEmpty())
+                <div class="mt-4 overflow-x-auto">
+                    <table class="ui-table">
+                        <thead class="ui-thead">
+                            <tr>
+                                <th class="ui-th">{{ __('Month') }}</th>
+                                <th class="ui-th">{{ __('Net pay') }}</th>
+                                <th class="ui-th">{{ __('Overtime') }}</th>
+                                <th class="ui-th">{{ __('Deductions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="ui-tbody">
+                            @foreach ($monthlyTrend as $row)
+                                <tr class="ui-tr">
+                                    <td class="ui-td-strong">{{ $row->month_key }}</td>
+                                    <td class="ui-td">{{ number_format((float) $row->net_total, 2) }}</td>
+                                    <td class="ui-td">{{ number_format((float) $row->overtime_total, 2) }}</td>
+                                    <td class="ui-td">{{ number_format((float) $row->deductions_total, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="mt-4 text-sm text-gray-500">{{ __('No monthly trend data in this range.') }}</p>
+            @endif
+        </x-ui.card>
     </x-ui.page>
 </x-app-layout>

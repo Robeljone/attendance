@@ -19,6 +19,73 @@
         <div class="space-y-6">
             <x-ui.flash />
 
+            <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
+            {{-- Today --}}
+            <x-ui.card>
+                <x-slot name="header">
+                    <h3 class="ui-card-title">{{ __('Today') }}</h3>
+                </x-slot>
+
+                <div class="space-y-6">
+                    <dl class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <div class="ui-stat">
+                            <dt class="ui-stat-label">{{ __('Status') }}</dt>
+                            <dd class="mt-1 text-sm font-semibold text-gray-900">
+                                {{ $todayStatus ?? ($todayRecord?->isOpen() ? __('Clocked in') : ($todayRecord?->clock_out_at ? __('Completed') : __('Not started'))) }}
+                            </dd>
+                        </div>
+                        <div class="ui-stat">
+                            <dt class="ui-stat-label">{{ __('Clock in') }}</dt>
+                            <dd class="mt-1 text-sm font-semibold tabular-nums text-gray-900">{{ $todayRecord?->clock_in_at?->format('H:i') ?? '—' }}</dd>
+                        </div>
+                        <div class="ui-stat">
+                            <dt class="ui-stat-label">{{ __('Clock out') }}</dt>
+                            <dd class="mt-1 text-sm font-semibold tabular-nums text-gray-900">{{ $todayRecord?->clock_out_at?->format('H:i') ?? '—' }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        @if ($canClockIn ?? ! ($todayRecord?->clock_in_at))
+                            <form method="POST" action="{{ route('portal.attendance.clock-in') }}">
+                                @csrf
+                                <input type="hidden" name="token" x-model="scannedToken">
+                                <button
+                                    type="submit"
+                                    x-bind:disabled="! scanVerified"
+                                    class="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+                                >
+                                    {{ __('Clock in') }}
+                                </button>
+                            </form>
+                        @endif
+                        @if ($canClockOut ?? ($todayRecord?->isOpen() ?? false))
+                            <form method="POST" action="{{ route('portal.attendance.clock-out') }}">
+                                @csrf
+                                <input type="hidden" name="token" x-model="scannedToken">
+                                <button
+                                    type="submit"
+                                    x-bind:disabled="! scanVerified"
+                                    class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+                                >
+                                    {{ __('Clock out') }}
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+
+                    <p
+                        x-show="! scanVerified"
+                        x-cloak
+                        class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                    >
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                        </svg>
+                        <span>{{ __('Scan the station QR code to enable clock in / out.') }}</span>
+                    </p>
+                </div>
+            </x-ui.card>
+
             {{-- Scan station --}}
             <x-ui.card>
                 <x-slot name="header">
@@ -46,7 +113,7 @@
                 </div>
                 </x-slot>
 
-                <div class="mx-auto w-full max-w-sm">
+                <div class="mx-auto w-full max-w-xs">
                         <div
                             class="relative aspect-square overflow-hidden rounded-2xl bg-gray-900 ring-1 ring-gray-900/10"
                             :class="scanVerified ? 'ring-2 ring-green-500 ring-offset-2' : ''"
@@ -116,7 +183,7 @@
                                     </svg>
                                 </span>
                                 <p class="text-base font-semibold text-green-800">{{ __('Station QR verified') }}</p>
-                                <p class="text-sm text-green-700">{{ __('You can clock in or out below.') }}</p>
+                                <p class="text-sm text-green-700">{{ __('You can clock in or out.') }}</p>
                             </div>
                         </div>
 
@@ -161,72 +228,7 @@
                         </div>
                 </div>
             </x-ui.card>
-
-            {{-- Today --}}
-            <x-ui.card>
-                <x-slot name="header">
-                    <h3 class="ui-card-title">{{ __('Today') }}</h3>
-                </x-slot>
-
-                <div class="space-y-6">
-                    <dl class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <div class="ui-stat">
-                            <dt class="ui-stat-label">{{ __('Status') }}</dt>
-                            <dd class="mt-1 text-sm font-semibold text-gray-900">
-                                {{ $todayStatus ?? ($todayRecord?->isOpen() ? __('Clocked in') : ($todayRecord?->clock_out_at ? __('Completed') : __('Not started'))) }}
-                            </dd>
-                        </div>
-                        <div class="ui-stat">
-                            <dt class="ui-stat-label">{{ __('Clock in') }}</dt>
-                            <dd class="mt-1 text-sm font-semibold tabular-nums text-gray-900">{{ $todayRecord?->clock_in_at?->format('H:i') ?? '—' }}</dd>
-                        </div>
-                        <div class="ui-stat">
-                            <dt class="ui-stat-label">{{ __('Clock out') }}</dt>
-                            <dd class="mt-1 text-sm font-semibold tabular-nums text-gray-900">{{ $todayRecord?->clock_out_at?->format('H:i') ?? '—' }}</dd>
-                        </div>
-                    </dl>
-
-                    <div class="flex flex-wrap items-center gap-3">
-                        @if ($canClockIn ?? ! ($todayRecord?->clock_in_at))
-                            <form method="POST" action="{{ route('portal.attendance.clock-in') }}">
-                                @csrf
-                                <input type="hidden" name="token" x-model="scannedToken">
-                                <button
-                                    type="submit"
-                                    x-bind:disabled="! scanVerified"
-                                    class="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
-                                >
-                                    {{ __('Clock in') }}
-                                </button>
-                            </form>
-                        @endif
-                        @if ($canClockOut ?? ($todayRecord?->isOpen() ?? false))
-                            <form method="POST" action="{{ route('portal.attendance.clock-out') }}">
-                                @csrf
-                                <input type="hidden" name="token" x-model="scannedToken">
-                                <button
-                                    type="submit"
-                                    x-bind:disabled="! scanVerified"
-                                    class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
-                                >
-                                    {{ __('Clock out') }}
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-
-                    <p
-                        x-show="! scanVerified"
-                        x-cloak
-                        class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
-                    >
-                        <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                        </svg>
-                        <span>{{ __('Scan the station QR code above to enable clock in / out.') }}</span>
-                    </p>
-                </div>
-            </x-ui.card>
+            </div>
         </div>
         </div>
     </x-ui.page>

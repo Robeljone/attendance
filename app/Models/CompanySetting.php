@@ -20,6 +20,12 @@ class CompanySetting extends Model
         'currency',
         'income_tax_percent',
         'pension_percent',
+        'standard_work_hours_per_day',
+        'overtime_weekday_multiplier',
+        'overtime_weekend_multiplier',
+        'late_grace_minutes',
+        'late_penalty_per_occurrence',
+        'deduct_unexcused_absence',
     ];
 
     protected function casts(): array
@@ -29,6 +35,12 @@ class CompanySetting extends Model
             'enforce_company_network' => 'boolean',
             'income_tax_percent' => 'decimal:2',
             'pension_percent' => 'decimal:2',
+            'standard_work_hours_per_day' => 'decimal:2',
+            'overtime_weekday_multiplier' => 'decimal:2',
+            'overtime_weekend_multiplier' => 'decimal:2',
+            'late_grace_minutes' => 'integer',
+            'late_penalty_per_occurrence' => 'decimal:2',
+            'deduct_unexcused_absence' => 'boolean',
         ];
     }
 

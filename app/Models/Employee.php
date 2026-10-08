@@ -21,6 +21,7 @@ class Employee extends Model
     protected $fillable = [
         'user_id',
         'department_id',
+        'salary_structure_id',
         'employee_number',
         'phone',
         'position',
@@ -72,6 +73,11 @@ class Employee extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function salaryStructure(): BelongsTo
+    {
+        return $this->belongsTo(SalaryStructure::class);
+    }
+
     public function workSchedules(): BelongsToMany
     {
         return $this->belongsToMany(WorkSchedule::class)
@@ -92,6 +98,16 @@ class Employee extends Model
     public function leaveRequests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function expenseClaims(): HasMany
+    {
+        return $this->hasMany(ExpenseClaim::class);
+    }
+
+    public function salaryIncrements(): HasMany
+    {
+        return $this->hasMany(SalaryIncrement::class);
     }
 
     public function payslips(): HasMany

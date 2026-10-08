@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\EmployeeAuditAction;
 use App\Enums\EmployeeAuditOutcome;
+use App\Enums\ExpenseClaimStatus;
 use App\Enums\LeaveStatus;
+use App\Enums\PayslipLineType;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceRecord;
 use App\Models\Employee;
 use App\Models\EmployeeAuditLog;
+use App\Models\ExpenseClaim;
 use App\Models\LeaveRequest;
 use App\Models\Payslip;
+use App\Models\PayslipLine;
 use App\Support\ResolvesIndexPagination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -49,17 +53,54 @@ class ReportController extends Controller
             ? (($topDepartment->name ?? 'Unassigned').' ('.$topDepartment->punches.')')
             : '—';
 
+        $payslipQuery = Payslip::query()
+            ->whereHas('payrollPeriod', fn ($q) => $q->whereBetween('start_date', [$from, $to]));
+
         $payrollSummary = [
-            'Total net pay' => number_format((float) Payslip::query()
-                ->whereHas('payrollPeriod', fn ($q) => $q->whereBetween('start_date', [$from, $to]))
-                ->sum('net_pay'), 2),
-            'Total deductions' => number_format((float) Payslip::query()
-                ->whereHas('payrollPeriod', fn ($q) => $q->whereBetween('start_date', [$from, $to]))
-                ->sum('deductions'), 2),
-            'Payslips issued' => Payslip::query()
-                ->whereHas('payrollPeriod', fn ($q) => $q->whereBetween('start_date', [$from, $to]))
-                ->count(),
+            'Total net pay' => number_format((float) (clone $payslipQuery)->sum('net_pay'), 2),
+            'Total gross (earnings)' => number_format((float) (clone $payslipQuery)->sum(DB::raw('base_salary + bonuses + overtime_pay')), 2),
+            'Total deductions' => number_format((float) (clone $payslipQuery)->sum('deductions'), 2),
+            'Total overtime' => number_format((float) (clone $payslipQuery)->sum('overtime_pay'), 2),
+            'Payslips issued' => (clone $payslipQuery)->count(),
+            'Pending expense claims' => ExpenseClaim::query()->where('status', ExpenseClaimStatus::Pending)->count(),
         ];
+
+        $payrollByDepartment = Payslip::query()
+            ->select(
+                DB::raw("COALESCE(departments.name, 'Unassigned') as department_name"),
+                DB::raw('SUM(payslips.net_pay) as net_total'),
+                DB::raw('SUM(payslips.overtime_pay) as overtime_total'),
+                DB::raw('COUNT(payslips.id) as payslip_count'),
+            )
+            ->join('employees', 'employees.id', '=', 'payslips.employee_id')
+            ->leftJoin('departments', 'departments.id', '=', 'employees.department_id')
+            ->whereHas('payrollPeriod', fn ($q) => $q->whereBetween('start_date', [$from, $to]))
+            ->groupBy('departments.name')
+            ->orderByDesc('net_total')
+            ->get();
+
+        $deductionBreakdown = PayslipLine::query()
+            ->select('code', 'label', DB::raw('SUM(amount) as total'))
+            ->where('type', PayslipLineType::Deduction)
+            ->whereHas('payslip.payrollPeriod', fn ($q) => $q->whereBetween('start_date', [$from, $to]))
+            ->groupBy('code', 'label')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get();
+
+        $monthlyTrend = Payslip::query()
+            ->with('payrollPeriod')
+            ->whereHas('payrollPeriod', fn ($q) => $q->whereBetween('start_date', [$from, $to]))
+            ->get()
+            ->groupBy(fn (Payslip $payslip) => $payslip->payrollPeriod?->start_date?->format('Y-m') ?? 'unknown')
+            ->map(fn ($group, $month) => (object) [
+                'month_key' => $month,
+                'net_total' => round($group->sum(fn (Payslip $payslip) => (float) $payslip->net_pay), 2),
+                'overtime_total' => round($group->sum(fn (Payslip $payslip) => (float) $payslip->overtime_pay), 2),
+                'deductions_total' => round($group->sum(fn (Payslip $payslip) => (float) $payslip->deductions), 2),
+            ])
+            ->sortKeys()
+            ->values();
 
         $auditSummary = [
             'Attendance events' => EmployeeAuditLog::query()->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])->count(),
@@ -73,7 +114,16 @@ class ReportController extends Controller
                 ->count(),
         ];
 
-        return view('admin.reports.index', compact('attendanceSummary', 'payrollSummary', 'auditSummary', 'from', 'to'));
+        return view('admin.reports.index', compact(
+            'attendanceSummary',
+            'payrollSummary',
+            'payrollByDepartment',
+            'deductionBreakdown',
+            'monthlyTrend',
+            'auditSummary',
+            'from',
+            'to',
+        ));
     }
 
     public function audit(Request $request): View

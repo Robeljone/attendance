@@ -133,7 +133,7 @@
                     <x-sidebar.nav-group
                         :title="__('Pay & reports')"
                         icon="banknotes"
-                        :active="request()->routeIs('admin.payroll.*', 'admin.pay-components.*', 'admin.reports.*')"
+                        :active="request()->routeIs('admin.payroll.*', 'admin.pay-components.*', 'admin.salary-structures.*', 'admin.bonus-runs.*', 'admin.salary-increments.*', 'admin.expense-claims.*', 'admin.reports.*')"
                     >
                         <x-sidebar.nav-link
                             :href="route('admin.payroll.index')"
@@ -152,6 +152,42 @@
                             x-on:click="closeSidebarOnMobile()"
                         >
                             {{ __('Pay components') }}
+                        </x-sidebar.nav-link>
+                        <x-sidebar.nav-link
+                            :href="route('admin.salary-structures.index')"
+                            :active="request()->routeIs('admin.salary-structures.*')"
+                            icon="banknotes"
+                            :nested="true"
+                            x-on:click="closeSidebarOnMobile()"
+                        >
+                            {{ __('Salary structures') }}
+                        </x-sidebar.nav-link>
+                        <x-sidebar.nav-link
+                            :href="route('admin.bonus-runs.index')"
+                            :active="request()->routeIs('admin.bonus-runs.*')"
+                            icon="banknotes"
+                            :nested="true"
+                            x-on:click="closeSidebarOnMobile()"
+                        >
+                            {{ __('Bonus runs') }}
+                        </x-sidebar.nav-link>
+                        <x-sidebar.nav-link
+                            :href="route('admin.salary-increments.index')"
+                            :active="request()->routeIs('admin.salary-increments.*')"
+                            icon="banknotes"
+                            :nested="true"
+                            x-on:click="closeSidebarOnMobile()"
+                        >
+                            {{ __('Salary increments') }}
+                        </x-sidebar.nav-link>
+                        <x-sidebar.nav-link
+                            :href="route('admin.expense-claims.index')"
+                            :active="request()->routeIs('admin.expense-claims.*')"
+                            icon="banknotes"
+                            :nested="true"
+                            x-on:click="closeSidebarOnMobile()"
+                        >
+                            {{ __('Expense claims') }}
                         </x-sidebar.nav-link>
                         <x-sidebar.nav-link
                             :href="route('admin.reports.index')"
@@ -220,7 +256,7 @@
                     <x-sidebar.nav-group
                         :title="__('My work')"
                         icon="briefcase"
-                        :active="request()->routeIs('portal.attendance.*', 'portal.leaves.*', 'portal.payslips.*')"
+                        :active="request()->routeIs('portal.attendance.*', 'portal.leaves.*', 'portal.payslips.*', 'portal.expense-claims.*')"
                     >
                         <x-sidebar.nav-link
                             :href="route('portal.attendance.index')"
@@ -239,6 +275,15 @@
                             x-on:click="closeSidebarOnMobile()"
                         >
                             {{ __('My Leaves') }}
+                        </x-sidebar.nav-link>
+                        <x-sidebar.nav-link
+                            :href="route('portal.expense-claims.index')"
+                            :active="request()->routeIs('portal.expense-claims.*')"
+                            icon="banknotes"
+                            :nested="true"
+                            x-on:click="closeSidebarOnMobile()"
+                        >
+                            {{ __('My Expenses') }}
                         </x-sidebar.nav-link>
                         <x-sidebar.nav-link
                             :href="route('portal.payslips.index')"
